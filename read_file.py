@@ -13,10 +13,10 @@ class AssetRiskReport(object):
         self._prices = defaultdict(float)
 
     def _calc_position(self, trade):
-        pos = self._position.get(trade.symbol, {'Position': 0, 'MktVal':0.0})
+        pos = self._position.get(trade.symbol, {'Position': 0, 'MktVal':0.0, 'OrderPrice':0.0})
         pos['Position'] += trade.qty * (1 if trade.side == 'BUY' else -1)
+        pos['OrderPrice'] = trade.price
         self._tradeVol[trade.counterParty] += trade.qty
-        # pos['MktVal'] = pos['self._position'] * trade.price
         self._position[trade.symbol] = pos
 
     def _read_process_marks(self, filename):
@@ -47,18 +47,19 @@ class AssetRiskReport(object):
     def generate_report(self):
 
         for k,v in self._position.iteritems():
-            v['MktVal'] = v['Position'] * self._prices[k]
+            # if missing marks then use the last order price as the current price.
+            v['MktVal'] = v['Position'] * (self._prices[k] if self._prices[k] else v['OrderPrice'])
 
         print '---------- Asset Risk Report ------------'
         for item in sorted(self._position.items(), key=lambda x: x[1]['MktVal'], reverse=True)[:20]:
             print item[0], item[1]['Position'], item[1]['MktVal']
 
         print '----------- Trade Volume Report ------------'
-        for item in sorted(self._tradeVol.items(), key=lambda x: x['TradeVol'], reverse=True)[:20]:
+        for item in sorted(self._tradeVol.items(), key=lambda x: x[1], reverse=True)[:20]:
             print item[0], item[1]
 
 if __name__ == '__main__':
-    path='C:\\Temp\\test_interview_1\\Data'
+    path=os.path.join(os.getcwd(), 'Data')
     asset_risk_report = AssetRiskReport(path)
     asset_risk_report.read_and_process()
     asset_risk_report.generate_report()
