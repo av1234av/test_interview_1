@@ -30,21 +30,23 @@ class AssetRiskReport(object):
 
     def read_and_process(self):
 
-        for filename in os.listdir(self._path):
+        # walk the current directory and process files
+        for dirpath, dir, filenames in os.walk(self._path):
 
-            if filename == 'marks.txt':
-                self._read_process_marks(filename)
-                continue
+            for filename in filenames:
+                if filename == 'marks.txt':
+                    self._read_process_marks(filename)
+                    continue
 
-            with open(os.path.join(self._path, filename)) as csvfile:
-                reader = csv.reader(csvfile, delimiter='\t')
+                with open(os.path.join(dirpath, filename)) as csvfile:
+                    reader = csv.reader(csvfile, delimiter='\t')
 
-                # for trade in map(Trade._make, reader):
-                for row in reader:
-                    row[4]=int(row[4])          # qty is a numeric integer
-                    row[5]=float(row[5])        # price is a float
-                    trade=Trade(*row)
-                    self._calc_position(trade)
+                    # for trade in map(Trade._make, reader):
+                    for row in reader:
+                        row[4]=int(row[4])          # qty is a numeric integer
+                        row[5]=float(row[5])        # price is a float
+                        trade=Trade(*row)
+                        self._calc_position(trade)
 
     def generate_report(self):
 
