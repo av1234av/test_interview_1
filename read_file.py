@@ -6,6 +6,8 @@ Trade = namedtuple('Trade',['tradeDate','counterParty','symbol','side','qty','pr
 
 
 class AssetRiskReport(object):
+    TOP_N = 20
+
     def __init__(self, path):
         self._path = path
         self._position = dict()
@@ -51,11 +53,16 @@ class AssetRiskReport(object):
             v['MktVal'] = v['Position'] * (self._prices[k] if self._prices[k] else v['OrderPrice'])
 
         print '---------- Asset Risk Report ------------'
-        for item in sorted(self._position.items(), key=lambda x: x[1]['MktVal'], reverse=True)[:20]:
+        # sort the positions based on mktval
+        # filter out the long positions
+        # return the top 20
+
+        for item in filter(lambda x: x[1]['MktVal'] > 0, \
+                           sorted(self._position.items(), key=lambda x: x[1]['MktVal'], reverse=True))[:self.TOP_N]:
             print item[0], item[1]['Position'], item[1]['MktVal']
 
         print '----------- Trade Volume Report ------------'
-        for item in sorted(self._tradeVol.items(), key=lambda x: x[1], reverse=True)[:20]:
+        for item in sorted(self._tradeVol.items(), key=lambda x: x[1], reverse=True)[:self.TOP_N]:
             print item[0], item[1]
 
 if __name__ == '__main__':
