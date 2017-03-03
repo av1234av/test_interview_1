@@ -15,7 +15,7 @@ class AssetRiskReport(object):
         self._prices = defaultdict(float)
 
     def _calc_position(self, trade):
-        pos = self._position.get(trade.symbol, {'Position': 0, 'MktVal':0.0, 'OrderPrice':0.0})
+        pos = self._position.get(trade.symbol, {'Position': 0, 'OrderPrice':0.0})
         pos['Position'] += trade.qty * (1 if trade.side == 'BUY' else -1)
         pos['OrderPrice'] = trade.price
         self._tradeVol[trade.counterParty] += trade.qty
@@ -49,19 +49,20 @@ class AssetRiskReport(object):
                         self._calc_position(trade)
 
     def generate_report(self):
-
-        for k,v in self._position.iteritems():
-            # if missing marks then use the last order price as the current price.
-            v['MktVal'] = v['Position'] * (self._prices[k] if self._prices[k] else v['OrderPrice'])
+        #
+        # for k,v in self._position.iteritems():
+        #     # if missing marks then use the last order price as the current price.
+        #     v['MktVal'] = v['Position'] * (self._prices[k] if self._prices[k] else v['OrderPrice'])
 
         print '---------- Asset Risk Report ------------'
-        # sort the positions based on mktval
+        # sort the positions based on Position
         # filter out the long positions
-        # return the top 20
+        # return the top 20 using slice
 
-        for item in filter(lambda x: x[1]['MktVal'] > 0, \
-                           sorted(self._position.items(), key=lambda x: x[1]['MktVal'], reverse=True))[:self.TOP_N]:
-            print item[0], item[1]['Position'], item[1]['MktVal']
+        for item in filter(lambda x: x[1]['Position'] > 0, \
+                           sorted(self._position.items(), key=lambda x: x[1]['Position'], reverse=True))[:self.TOP_N]:
+            mkt_val = item[1]['Position'] * (self._prices[item[0]] if self._prices[item[0]] else item[1]['OrderPrice'])
+            print item[0], item[1]['Position'], mkt_val
 
         print '----------- Trade Volume Report ------------'
         for item in sorted(self._tradeVol.items(), key=lambda x: x[1], reverse=True)[:self.TOP_N]:
